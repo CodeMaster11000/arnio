@@ -552,22 +552,32 @@ def test_profile_approx_top_values_validation(tmp_path):
     with pytest.raises(TypeError, match="approx_top_values must be a bool"):
         ar.profile(frame, approx_top_values="yes")
 
-    with pytest.raises(TypeError, match="approx_top_values_min_unique must be an integer"):
+    with pytest.raises(
+        TypeError, match="approx_top_values_min_unique must be an integer"
+    ):
         ar.profile(frame, approx_top_values_min_unique="5")
 
-    with pytest.raises(ValueError, match="approx_top_values_min_unique must be non-negative"):
+    with pytest.raises(
+        ValueError, match="approx_top_values_min_unique must be non-negative"
+    ):
         ar.profile(frame, approx_top_values_min_unique=-1)
 
     with pytest.raises(TypeError, match="approx_top_values_min_ratio must be a float"):
         ar.profile(frame, approx_top_values_min_ratio="0.5")
 
-    with pytest.raises(ValueError, match="approx_top_values_min_ratio must be between 0 and 1"):
+    with pytest.raises(
+        ValueError, match="approx_top_values_min_ratio must be between 0 and 1"
+    ):
         ar.profile(frame, approx_top_values_min_ratio=1.5)
 
-    with pytest.raises(TypeError, match="approx_top_values_sample_size must be an integer"):
+    with pytest.raises(
+        TypeError, match="approx_top_values_sample_size must be an integer"
+    ):
         ar.profile(frame, approx_top_values_sample_size="10")
 
-    with pytest.raises(ValueError, match="approx_top_values_sample_size must be positive"):
+    with pytest.raises(
+        ValueError, match="approx_top_values_sample_size must be positive"
+    ):
         ar.profile(frame, approx_top_values_sample_size=0)
 
 

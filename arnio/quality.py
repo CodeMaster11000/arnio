@@ -1854,9 +1854,14 @@ def _approx_top_values(
     sampled = series.sample(n=sample_n, random_state=_APPROX_TOP_VALUES_SEED)
     counts = sampled.value_counts(dropna=True)
     total = int(counts.sum())
-    return [
-        (val, int(cnt), _ratio(int(cnt), total)) for val, cnt in counts.head(n).items()
-    ], sample_n, _ratio(sample_n, len(series))
+    return (
+        [
+            (val, int(cnt), _ratio(int(cnt), total))
+            for val, cnt in counts.head(n).items()
+        ],
+        sample_n,
+        _ratio(sample_n, len(series)),
+    )
 
 
 _EMAIL_PATTERN = r"[^@\s]+@[^@\s]+\.[^@\s]+"
