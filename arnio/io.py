@@ -311,7 +311,7 @@ def _reject_utf8_nul_bytes(path: str) -> None:
 def read_csv(
     path: str | os.PathLike[str],
     *,
-    delimiter: str = ",",
+    delimiter: str | None = None,
     has_header: bool = True,
     usecols: list[str] | None = None,
     nrows: int | None = None,
@@ -328,9 +328,15 @@ def read_csv(
     ----------
     path : str or file-like object
         Filesystem path or text file-like object containing CSV data.
-        Supports .csv, .txt, and .tsv extensions for path inputs.
-    delimiter : str, default ","
-        Field delimiter character.
+        Any file extension is accepted. For ``.tsv`` files, the delimiter
+        is automatically set to ``'\t'`` when ``delimiter`` is omitted.
+    delimiter : str or None, default None
+        Field delimiter character.  When ``None`` (the default) the
+        delimiter is inferred from the file extension: ``'\t'`` for
+        ``.tsv`` files and ``','`` for everything else.  Passing an
+        explicit value always takes precedence — for example,
+        ``delimiter=','`` reads a comma-delimited ``.tsv`` file without
+        any auto-detection.
     has_header : bool, default True
         Whether the file has a header row.
     usecols : list[str], optional
@@ -370,28 +376,30 @@ def read_csv(
     Raises
     ------
     ValueError
-        If file format is unsupported or if thousands_separator is invalid.
+        If thousands_separator is invalid.
 
     TypeError
-        If thousands_separator is not a string or None.
+        If delimiter is not a string or None, or thousands_separator is
+        not a string or None.
 
     CsvReadError
         If CSV input contains NUL bytes and appears binary or corrupted.
 
     Examples
     --------
-    >>> frame = ar.read_csv("data.csv", delimiter=",", has_header=True)
+    >>> frame = ar.read_csv("data.csv")           # comma delimiter
+    >>> frame = ar.read_csv("data.tsv")           # tab auto-detected
+    >>> frame = ar.read_csv("data.tsv", delimiter=",")  # explicit comma honoured
+    >>> frame = ar.read_csv("data.dat")           # non-standard extension accepted
     """
     path, should_cleanup = _materialize_csv_input(path)
     path_lower = path.lower()
-    if not (
-        path_lower.endswith(".csv")
-        or path_lower.endswith(".txt")
-        or path_lower.endswith(".tsv")
-    ):
-        raise ValueError(
-            f"Unsupported file format: {path}. Only .csv, .txt, and .tsv are supported."
-        )
+
+    # Resolve the sentinel: auto-detect tab for .tsv only when the caller
+    # truly omitted delimiter (None).  An explicit delimiter="," is always
+    # honoured, even for .tsv paths.
+    if delimiter is None:
+        delimiter = "\t" if path_lower.endswith(".tsv") else ","
 
     if _is_utf8_encoding(encoding):
         _reject_utf8_nul_bytes(path)
@@ -640,7 +648,7 @@ def write_csv(
 def scan_csv(
     path: str | os.PathLike[str],
     *,
-    delimiter: str = ",",
+    delimiter: str | None = None,
     encoding: str = "utf-8",
     trim_headers: bool = True,
     thousands_separator: str | None = None,
@@ -653,9 +661,14 @@ def scan_csv(
     Parameters
     ----------
     path : str
-        Path to the CSV file. Supports .csv, .txt, and .tsv extensions.
-    delimiter : str, default ","
-        Field delimiter character.
+        Path to the CSV file. Any file extension is accepted. For ``.tsv``
+        files, the delimiter is automatically set to ``'\t'`` when
+        ``delimiter`` is omitted.
+    delimiter : str or None, default None
+        Field delimiter character.  When ``None`` (the default) the
+        delimiter is inferred from the file extension: ``'\t'`` for
+        ``.tsv`` files and ``','`` for everything else.  Passing an
+        explicit value always takes precedence.
     encoding : str, default "utf-8"
         File encoding. For non-UTF-8 inputs, a sample of the file is
         transcoded to infer the schema.
@@ -686,10 +699,11 @@ def scan_csv(
     Raises
     ------
     ValueError
-        If file format is unsupported or if thousands_separator is invalid.
+        If thousands_separator is invalid.
 
     TypeError
-        If thousands_separator is not a string or None.
+        If delimiter is not a string or None, or thousands_separator is
+        not a string or None.
 
     CsvReadError
         If CSV input contains NUL bytes and appears binary or corrupted.
@@ -699,17 +713,18 @@ def scan_csv(
     >>> schema = ar.scan_csv("data.csv")
     >>> print(schema)
     {'name': 'string', 'age': 'int64'}
+    >>> schema = ar.scan_csv("data.tsv")              # tab auto-detected
+    >>> schema = ar.scan_csv("data.tsv", delimiter=",")  # explicit comma honoured
+    >>> schema = ar.scan_csv("data.dat")              # non-standard extension accepted
     """
     path = os.fspath(path)
     path_lower = path.lower()
-    if not (
-        path_lower.endswith(".csv")
-        or path_lower.endswith(".txt")
-        or path_lower.endswith(".tsv")
-    ):
-        raise ValueError(
-            f"Unsupported file format: {path}. Only .csv, .txt, and .tsv are supported."
-        )
+
+    # Resolve the sentinel: auto-detect tab for .tsv only when the caller
+    # truly omitted delimiter (None).  An explicit delimiter="," is always
+    # honoured, even for .tsv paths.
+    if delimiter is None:
+        delimiter = "\t" if path_lower.endswith(".tsv") else ","
 
     if _is_utf8_encoding(encoding):
         _reject_utf8_nul_bytes(path)
