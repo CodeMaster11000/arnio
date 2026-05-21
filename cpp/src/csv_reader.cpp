@@ -1087,7 +1087,11 @@ std::optional<CsvParseResult> CsvChunkReader::next_chunk(size_t chunksize,
     }
 
     if (raw_data.empty()) {
-        return std::nullopt;
+        if (bad_rows.empty()) {
+            return std::nullopt;
+        }
+        rows_read_total_ += bad_rows.size();
+        return CsvParseResult{build_frame(raw_data), std::move(bad_rows)};
     }
 
     if (!header_finalized_) {
